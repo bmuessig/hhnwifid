@@ -10,16 +10,17 @@ import (
 )
 
 const (
-	Version           = "1.0"
-	RefreshInterval   = 30 * time.Second
-	RetryInterval     = 5 * time.Second
-	CooldownInterval  = 5 * time.Minute
-	Retries           = 3
-	DetectionUrl      = "http://captive.apple.com/"
-	ExpectedPortalUrl = "https://wlan.hs-heilbronn.de/login.html"
-	Network           = "internet"
-	Username          = "gast"
-	Password          = "gast"
+	Version            = "1.1"
+	RefreshInterval    = 30 * time.Second
+	RetryInterval      = 5 * time.Second
+	CooldownInterval   = 5 * time.Minute
+	Retries            = 3
+	DetectionUrl       = "http://1.1.1.3/"
+	ExpectedThroughUrl = "https://1.1.1.3/"
+	ExpectedPortalUrl  = "https://wlan.hs-heilbronn.de/login.html"
+	Network            = "internet"
+	Username           = "gast"
+	Password           = "gast"
 )
 
 var client = &http.Client{
@@ -70,18 +71,18 @@ func keepalive() (online bool) {
 	}()
 
 	log.Println("Detecting portals")
-	portal, err := detectPortal()
+	redirect, err := detectPortal()
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	if portal == "" {
+	if redirect == "" || strings.HasPrefix(redirect, ExpectedThroughUrl) {
 		log.Println("No portal detected")
 		return true
 	}
 
-	log.Println("Portal detected, redirecting to", portal)
-	if !strings.HasPrefix(portal, ExpectedPortalUrl) {
+	log.Println("Portal detected, redirecting to", redirect)
+	if !strings.HasPrefix(redirect, ExpectedPortalUrl) {
 		log.Println("Not the expected HHN portal at", ExpectedPortalUrl)
 		return
 	}
@@ -97,7 +98,7 @@ func keepalive() (online bool) {
 	return true
 }
 
-func detectPortal() (portal string, err error) {
+func detectPortal() (redirect string, err error) {
 	req, err := http.NewRequest(http.MethodGet, DetectionUrl, nil)
 	if err != nil {
 		return
@@ -110,7 +111,7 @@ func detectPortal() (portal string, err error) {
 	}
 
 	err = resp.Body.Close()
-	portal = resp.Header.Get("Location")
+	redirect = resp.Header.Get("Location")
 	return
 }
 
