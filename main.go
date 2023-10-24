@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	Version           = "1.0"
 	RefreshInterval   = 30 * time.Second
 	RetryInterval     = 5 * time.Second
 	CooldownInterval  = 5 * time.Minute
@@ -34,6 +35,7 @@ var lazyClient = &http.Client{
 
 func main() {
 	log.Println("HHN WiFi captive portal keepalive daemon")
+	log.Println("Version:", Version)
 	log.Println("Network:", Network)
 	log.Println("Login:", Username, ":", Password)
 	log.Println("Refresh:", RefreshInterval)
