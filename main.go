@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	Version            = "1.1"
+	Version            = "1.2"
 	RefreshInterval    = 30 * time.Second
 	RetryInterval      = 5 * time.Second
 	CooldownInterval   = 5 * time.Minute
@@ -22,6 +22,16 @@ const (
 	Username           = "gast"
 	Password           = "gast"
 )
+
+// Fails to renew
+// Portal at 1.1.1.1 wlan.hs-heilbronn.de
+// DNS at 208.67.222.222
+// All other DNS server blocked until auth
+// DNS will respond with all DNS queries
+// After 30 min (one of the two):
+// Get "http://captive.apple.com/": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+// Get "http://captive.apple.com/": dial tcp: lookup captive.apple.com: no such host
+// How could the connection be detected?
 
 var client = &http.Client{
 	Timeout: 10 * time.Second,
@@ -137,7 +147,6 @@ func solvePortal() (err error) {
 	req.Header.Set("User-Agent", UserAgent)
 	resp, err := client.Do(req)
 	if err != nil {
-		_ = resp.Body.Close()
 		return
 	}
 
