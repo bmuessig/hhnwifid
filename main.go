@@ -12,9 +12,9 @@ import (
 const (
 	Version            = "1.2"
 	RefreshInterval    = 30 * time.Second
-	RetryInterval      = 5 * time.Second
+	RetryInterval      = 10 * time.Second
 	CooldownInterval   = 5 * time.Minute
-	Retries            = 3
+	Retries            = 5
 	DetectionUrl       = "http://1.1.1.3/"
 	ExpectedThroughUrl = "https://1.1.1.3/"
 	ExpectedPortalUrl  = "https://wlan.hs-heilbronn.de/login.html"
