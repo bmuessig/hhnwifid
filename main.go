@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	Version            = "1.2"
+	Version            = "1.3"
 	IdleInterval       = 25 * time.Minute
 	RefreshInterval    = 30 * time.Second
 	RetryInterval      = 10 * time.Second
