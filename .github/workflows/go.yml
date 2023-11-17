@@ -46,6 +46,13 @@ jobs:
       env:
         GOOS: darwin
         GOARCH: arm64
+
+    - name: Upload all builds
+      uses: actions/upload-artifact@v3
+      with:
+        name: Linux build
+        path: hhnwifid_*
+        retention-days: 10
     
     - name: Upload Linux build
       uses: actions/upload-artifact@v3
