@@ -11,10 +11,11 @@ import (
 
 const (
 	Version            = "1.2"
+	IdleInterval       = 25 * time.Minute
 	RefreshInterval    = 30 * time.Second
 	RetryInterval      = 10 * time.Second
 	CooldownInterval   = 5 * time.Minute
-	Retries            = 5
+	Retries            = 4
 	DetectionUrl       = "http://1.1.1.3/"
 	ExpectedThroughUrl = "https://1.1.1.3/"
 	ExpectedPortalUrl  = "https://wlan.hs-heilbronn.de/login.html"
@@ -22,16 +23,6 @@ const (
 	Username           = "gast"
 	Password           = "gast"
 )
-
-// Fails to renew
-// Portal at 1.1.1.1 wlan.hs-heilbronn.de
-// DNS at 208.67.222.222
-// All other DNS server blocked until auth
-// DNS will respond with all DNS queries
-// After 30 min (one of the two):
-// Get "http://captive.apple.com/": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
-// Get "http://captive.apple.com/": dial tcp: lookup captive.apple.com: no such host
-// How could the connection be detected?
 
 var client = &http.Client{
 	Timeout: 10 * time.Second,
@@ -49,56 +40,80 @@ func main() {
 	log.Println("Version:", Version)
 	log.Println("Network:", Network)
 	log.Println("Login:", Username, ":", Password)
-	log.Println("Refresh:", RefreshInterval)
 	log.Println("If you use this tool, you accept the terms of service")
 	time.Sleep(2 * time.Second)
 
 	tries := 0
 	for {
-		if keepalive() {
+		online, solvable := testConnection()
+		if online {
+			if tries > 0 {
+				tries = 0
+				log.Println("Repair successful, now idling for", IdleInterval)
+				time.Sleep(IdleInterval)
+				log.Println("Idle time elapsed, now refreshing every", RefreshInterval)
+			}
+
 			time.Sleep(RefreshInterval)
 			continue
 		}
 
 		tries++
-		if tries >= Retries {
-			log.Println("Could not log in, delaying for", CooldownInterval)
+		if tries > Retries {
+			log.Println("Checks temporarily suspended, continuing in", CooldownInterval)
 			time.Sleep(CooldownInterval)
 			tries = 0
 			continue
 		}
 
-		log.Println("Previous log-in failed, retrying in", RetryInterval, "for", Retries-tries, "more time(s)")
+		if solvable && repairConnection() {
+			continue
+		}
+
+		log.Println("Not connected, checking again in", RetryInterval, "for", Retries-tries+1, "more time(s)")
 		time.Sleep(RetryInterval)
 	}
 }
 
-func keepalive() (online bool) {
+func testConnection() (online bool, solvable bool) {
 	defer func() {
 		if err := recover(); err != nil {
+			online, solvable = false, false
 			log.Println(err)
 		}
 	}()
 
-	log.Println("Detecting portals")
+	log.Println("Testing connection and detecting portals")
 	redirect, err := detectPortal()
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	if redirect == "" || strings.HasPrefix(redirect, ExpectedThroughUrl) {
-		log.Println("No portal detected")
-		return true
-	}
-
-	log.Println("Portal detected, redirecting to", redirect)
-	if !strings.HasPrefix(redirect, ExpectedPortalUrl) {
-		log.Println("Not the expected HHN portal at", ExpectedPortalUrl)
+		log.Println("Connected and no portal detected")
+		online = true
 		return
 	}
 
-	log.Println("Submitting log-in request")
-	err = solvePortal()
+	log.Println("Portal detected, redirecting to", redirect)
+	if strings.HasPrefix(redirect, ExpectedPortalUrl) {
+		solvable = true
+		return
+	}
+
+	log.Println("Not the expected HHN portal at", ExpectedPortalUrl)
+	return
+}
+
+func repairConnection() (attempted bool) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println(err)
+		}
+	}()
+
+	log.Println("Attempting repair by submitting log-in request")
+	err := solvePortal()
 	if err != nil {
 		log.Println(err)
 		return
