@@ -22,12 +22,21 @@ jobs:
       env:
         GOOS: linux
         GOARCH: amd64
+        CGO_ENABLED: 0
+
+    - name: Build for Linux/iSH (i386)
+      run: go build -v -ldflags="-s -w" -o hhnwifid_linux_i386
+      env:
+        GOOS: linux
+        GOARCH: 386
+        CGO_ENABLED: 0
         
     - name: Build for Linux (arm64)
       run: go build -v -ldflags="-s -w" -o hhnwifid_linux_arm64
       env:
         GOOS: linux
         GOARCH: arm64
+        CGO_ENABLED: 0
         
     - name: Build for Windows (amd64)
       run: go build -v -ldflags="-s -w" -o hhnwifid_windows_amd64.exe
@@ -47,30 +56,9 @@ jobs:
         GOOS: darwin
         GOARCH: arm64
 
-    - name: Upload all builds
+    - name: Upload the builds
       uses: actions/upload-artifact@v3
       with:
-        name: Linux build
+        name: Build
         path: hhnwifid_*
-        retention-days: 10
-    
-    - name: Upload Linux build
-      uses: actions/upload-artifact@v3
-      with:
-        name: Linux build
-        path: hhnwifid_linux_*
-        retention-days: 30
-    
-    - name: Upload Windows build
-      uses: actions/upload-artifact@v3
-      with:
-        name: Windows build
-        path: hhnwifid_windows_*
-        retention-days: 30
-    
-    - name: Upload macOS build
-      uses: actions/upload-artifact@v3
-      with:
-        name: macOS build
-        path: hhnwifid_macos_*
         retention-days: 30
